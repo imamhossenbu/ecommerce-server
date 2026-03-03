@@ -79,18 +79,18 @@ exports.paymentSuccess = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndUpdate({ transactionId: tranId }, { paymentStatus: 'Paid' });
     // Frontend-er success page-e redirect
-    res.redirect('http://127.0.0.1:5500/success.html'); 
+    res.redirect('https://ecommerce-frontend-amber-eight.vercel.app/success.html'); 
 };
 
 // Payment Fail/Cancel Handler
 exports.paymentFail = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndDelete({ transactionId: tranId }); // Order muche dewa ba status change
-    res.redirect('http://127.0.0.1:5500/cancel.html');
+    res.redirect('https://ecommerce-frontend-amber-eight.vercel.app/cancel.html');
 };
 
 exports.paymentCancel = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndUpdate({ transactionId: tranId }, { paymentStatus: 'Cancelled' });
-    res.redirect('http://127.0.0.1:5500/cancel.html');
+    res.redirect('https://ecommerce-frontend-amber-eight.vercel.app/cancel.html');
 };
