@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
       required: [true, "Please add a password"],
       minlength: [6, "Password must be at least 6 characters"],
     },
-    status:{
+    status: {
       type: String,
       enum: ["active", "inactive"],
       default: "active",
@@ -61,9 +61,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "Bangladesh",
     },
+    
+    // --- এই দুটি ফিল্ড অবশ্যই লাগবে রিসেট পাসওয়ার্ডের জন্য ---
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
   },
   {
-    timestamps: true, 
+    timestamps: true,
   }
 );
 

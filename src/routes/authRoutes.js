@@ -18,4 +18,7 @@ router.get("/logout", userControllers.logout);
 router.put("/update-profile", authMiddleware.protect, upload.single("image"), userControllers.updateProfile);
 router.post("/change-password", authMiddleware.protect, userControllers.changePassword);
 
+router.post("/forget-password", userControllers.forgetPassword);
+router.put("/reset-password/:token", userControllers.resetPassword);
+
 module.exports = router;
