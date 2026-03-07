@@ -8,7 +8,7 @@ exports.addReview = async (req, res) => {
         // ১. Review save kora
         const newReview = new Review({
             productID,
-            userID, // Ekhane user-er ID jabe (jodi logged in thake)
+            userID, 
             rating: Number(rating),
             comment
         });
@@ -45,5 +45,27 @@ exports.getProductReviews = async (req, res) => {
         res.status(200).json(reviews);
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+};
+
+
+exports.getHomeReviews = async (req, res) => {
+    try {
+        const reviews = await Review.find()
+            .populate({
+                path: 'userID', 
+                select: 'name profileImage',
+                model: 'User' 
+            })
+            .populate('productID', 'name')        
+            .sort({ createdAt: -1 }) 
+            .limit(4);
+            
+        res.status(200).json({
+            success: true,
+            data: reviews
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 };

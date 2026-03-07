@@ -1,4 +1,5 @@
 const Product = require("../models/product.model");
+const Review = require('../models/review.model');
 
 const createProduct = async (req, res) => {
   try {
@@ -59,10 +60,8 @@ const createProduct = async (req, res) => {
 
 
 //  GET /api/products/:id
-
 const getProductDetails = async (req, res) => {
   try {
-  
     const product = await Product.findById(req.params.id).populate("categoryID", "name");
 
     if (!product) {
@@ -72,12 +71,22 @@ const getProductDetails = async (req, res) => {
       });
     }
 
+    const reviews = await Review.find({ productID: req.params.id });
+    const totalReviews = reviews.length;
+    
+    const avgRating = totalReviews > 0 
+      ? (reviews.reduce((sum, rev) => sum + rev.rating, 0) / totalReviews).toFixed(1) 
+      : 0;
+
     res.status(200).json({
       success: true,
-      data: product,
+      data: {
+        ...product._doc, 
+        totalReviews: totalReviews,
+        avgRating: Number(avgRating)
+      },
     });
   } catch (error) {
-
     if (error.kind === "ObjectId") {
       return res.status(404).json({ success: false, message: "Invalid Product ID" });
     }
@@ -89,27 +98,39 @@ const getProductDetails = async (req, res) => {
 
 const getAllProducts = async (req, res) => {
   try {
-  
     const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 20;
+    const limit = Number(req.query.limit) || 20; 
     const skip = (page - 1) * limit;
 
-  
     const keyword = req.query.search
       ? { name: { $regex: req.query.search, $options: "i" } }
       : {};
 
-    const category = req.query.category ? { category: req.query.category } : {};
+    const category = req.query.category ? { categoryID: req.query.category } : {};
 
-  
+
+    let sortBy = { createdAt: -1 }; 
+
+    if (req.query.sort) {
+      const sortField = req.query.sort;
+      
+      if (sortField === 'price') sortBy = { salePrice: 1 };       
+      else if (sortField === '-price') sortBy = { salePrice: -1 }; 
+      else if (sortField === 'name') sortBy = { name: 1 };       
+      else if (sortField === '-name') sortBy = { name: -1 };      
+      else if (sortField === '-createdAt') sortBy = { createdAt: -1 }; 
+    }
+
+
     const totalProducts = await Product.countDocuments({ ...keyword, ...category });
+    
     const products = await Product.find({ ...keyword, ...category })
       .populate("categoryID", "name")
       .limit(limit)
       .skip(skip)
-      .sort({ createdAt: -1 }); 
+      .sort(sortBy); 
 
-    // response
+    // ৫. রেসপন্স
     res.status(200).json({
       success: true,
       count: products.length,
@@ -148,11 +169,55 @@ const deleteProduct = async (req, res) => {
 };
 
 
+
+
+const getBestsellers = async (req, res) => {
+  try {
+    // শুধু যাদের isBestseller true তাদের ফিল্টার করবে
+    const products = await Product.find({ isBestseller: true })
+      .populate("categoryID", "name")
+      .limit(4) 
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const getNewArrivals = async (req, res) => {
+  try {
+   
+    const products = await Product.find()
+      .populate("categoryID", "name")
+      .sort({ createdAt: -1 }) 
+      .limit(4); 
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+
+
+
 module.exports = { 
   createProduct, 
   getProductDetails,
   getAllProducts,
- deleteProduct
+ deleteProduct,
+  getBestsellers,
+  getNewArrivals
  };
 
 

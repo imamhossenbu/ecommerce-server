@@ -14,6 +14,8 @@ router.get("/all-users", authMiddleware.protect, adminMiddlwarre.isAdmin, userCo
 
 router.get("/logged-user", authMiddleware.protect, userControllers.getLoggedUser);
 
-router.get("/logout", userControllers.logout)
+router.get("/logout", userControllers.logout);
+router.put("/update-profile", authMiddleware.protect, upload.single("image"), userControllers.updateProfile);
+router.post("/change-password", authMiddleware.protect, userControllers.changePassword);
 
 module.exports = router;

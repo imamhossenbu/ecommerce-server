@@ -9,13 +9,15 @@ const orderSchema = new mongoose.Schema({
         address: String,
         city: String,
         state: String,
-        zipCode: String
+        zipCode: String,
+        country: String // এটিও যোগ করে দিন যেহেতু ফ্রন্টএন্ডে আছে
     },
     items: [{
         productID: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
         name: String,
         price: Number,
-        quantity: Number
+        quantity: Number,
+        image: String 
     }],
     totalAmount: Number,
     shippingFee: Number,
@@ -27,7 +29,7 @@ const orderSchema = new mongoose.Schema({
     },
     orderStatus: { 
         type: String, 
-        enum: ['Processing', 'Shipped', 'Delivered'], 
+        enum: ['Processing', 'Shipped', 'Delivered', 'Cancelled'], 
         default: 'Processing' 
     }
 }, { timestamps: true });

@@ -2,19 +2,17 @@ const userModel = require("../models/user.model");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-//   POST /api/auth/register
 const registerUser = async (req, res) => {
- 
   try {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Please add all fields" });
+      return res.status(400).json({ success: false, message: "Please add all fields" });
     }
 
     const userExists = await userModel.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ success: false, message: "User already exists" });
     }
 
     let imageUrl = "";
@@ -32,43 +30,36 @@ const registerUser = async (req, res) => {
       profileImage: imageUrl,
     });
 
-    //make token
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    if (user) {
-      res.status(201).json({
-        success: true,
-        message: "User registered successfully",
-        data: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          profileImage: user.profileImage,
-        },
-      });
-    } else {
-      res.status(400).json({ message: "Invalid user data" });
-    }
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      data: {
+        ...userResponse,
+        token
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
-
-//   POST /api/auth/register
 
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const user = await userModel.findOne({ email });
 
     if (!user) {
@@ -92,24 +83,23 @@ const loginUser = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000,
     });
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
 
     return res.status(200).json({
       success: true,
       message: "Login successfully",
       data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        ...userResponse,
         token,
       },
     });
   } catch (error) {
-    console.error("Login Error:", error.message);
     return res.status(500).json({
       success: false,
       message: "Server Error",
@@ -117,17 +107,13 @@ const loginUser = async (req, res) => {
   }
 };
 
-// get all user
 const getAllUsers = async (req, res) => {
   try {
-    //params
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.perPage) || 20;
     const searchKey = req.query.search || "";
 
-    //2 filtering
     let filter = {};
-
     if (searchKey) {
       filter.$or = [
         { name: { $regex: searchKey, $options: "i" } },
@@ -135,10 +121,7 @@ const getAllUsers = async (req, res) => {
       ];
     }
 
-    // 3. total user count
     const total = await userModel.countDocuments(filter);
-
-    // 4. user list
     const users = await userModel
       .find(filter)
       .select("-password")
@@ -146,7 +129,6 @@ const getAllUsers = async (req, res) => {
       .limit(perPage)
       .sort({ createdAt: -1 });
 
-    // 5. response
     res.status(200).json({
       success: true,
       message: "Users fetched successfully",
@@ -159,7 +141,6 @@ const getAllUsers = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Get All Users Error:", error);
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -181,24 +162,76 @@ const getLoggedUser = async (req, res) => {
 
 const logout = async (req, res) => {
   try {
-  
-    res.cookie('token', '', {
-      httpOnly: true,
-      expires: new Date(0), 
-      secure: process.env.NODE_ENV === 'production', 
-      sameSite: 'strict',
-    });
-
     res.status(200).json({
       success: true,
-      message: 'Logged out successfully'
+      message: 'Logged out successfully from server'
     });
   } catch (error) {
-    console.error("Logout Error:", error);
     res.status(500).json({
       success: false,
       message: 'Server error during logout'
     });
+  }
+};
+
+
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Current password is incorrect" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedNewPassword;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name, phone, address, city, state, zipCode, country } = req.body;
+    const userId = req.user._id;
+
+    const updateData = { name, phone, address, city, state, zipCode, country };
+    
+    if (req.file) {
+      updateData.profileImage = req.file.path;
+    }
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { $set: updateData },
+      { 
+        returnDocument: 'after', 
+        runValidators: true 
+      }
+    ).select("-password");
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedUser
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -207,5 +240,7 @@ module.exports = {
   loginUser,
   getAllUsers,
   getLoggedUser,
-  logout
+  logout,
+  updateProfile,
+  changePassword
 };

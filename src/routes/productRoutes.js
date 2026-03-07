@@ -13,8 +13,11 @@ const productUpload = upload.fields([
 
 
 router.post("/create-product", protect, isAdmin,  productUpload, productContollers.createProduct);
-router.get("/product/:id", productContollers.getProductDetails)
+
 router.get("/products",  productContollers.getAllProducts)
 router.delete("/product-delete/:id", protect, isAdmin, productContollers.deleteProduct)
+router.get("/products/bestsellers", productContollers.getBestsellers)
+router.get("/products/new-arrivals", productContollers.getNewArrivals);
+router.get("/products/:id", productContollers.getProductDetails)
 
 module.exports = router;

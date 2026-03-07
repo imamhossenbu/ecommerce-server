@@ -60,7 +60,7 @@ exports.createCheckoutSession = async (req, res) => {
             if (apiResponse?.GatewayPageURL) {
                 res.status(200).json({ success: true, url: apiResponse.GatewayPageURL });
             } else {
-                console.log("SSL Error Response:", apiResponse); // Console-e error paben
+                console.log("SSL Error Response:", apiResponse); 
                 res.status(400).json({ 
                     success: false, 
                     message: apiResponse?.failedreason || "SSLCommerz session failed" 
@@ -79,18 +79,62 @@ exports.paymentSuccess = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndUpdate({ transactionId: tranId }, { paymentStatus: 'Paid' });
     // Frontend-er success page-e redirect
-    res.redirect('https://ecommerce-frontend-amber-eight.vercel.app/success.html'); 
+    res.redirect('http://localhost:5173/success'); 
 };
 
 // Payment Fail/Cancel Handler
 exports.paymentFail = async (req, res) => {
     const { tranId } = req.params;
-    await Order.findOneAndDelete({ transactionId: tranId }); // Order muche dewa ba status change
-    res.redirect('https://ecommerce-frontend-amber-eight.vercel.app/cancel.html');
+    await Order.findOneAndDelete({ transactionId: tranId }); 
+    res.redirect('http://localhost:5173/cancel');
 };
 
 exports.paymentCancel = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndUpdate({ transactionId: tranId }, { paymentStatus: 'Cancelled' });
-    res.redirect('https://ecommerce-frontend-amber-eight.vercel.app/cancel.html');
+    res.redirect('http://localhost:5173/cancel');
+};
+
+
+exports.getMyOrders = async (req, res) => {
+    try {
+        const userEmail = req.user.email; 
+        const orders = await Order.find({ "customerInfo.email": userEmail }).sort({ createdAt: -1 });
+        
+        res.status(200).json({ success: true, data: orders });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+exports.getOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params; 
+    const order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found"
+      });
+    }
+
+    
+    if (order.customerInfo.email !== req.user.email) {
+        return res.status(401).json({ success: false, message: "Unauthorized access" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: order
+    });
+  } catch (error) {
+    console.error("GetOrder Error:", error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server Error", 
+      error: error.message 
+    });
+  }
 };
