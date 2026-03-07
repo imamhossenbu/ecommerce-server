@@ -37,7 +37,6 @@ const productSchema = new mongoose.Schema(
       required: [true, "Main thumbnail image is required"],
     },
 
-    // Gallery images for Details Page (Array of Strings)
     images: {
       type: [String],
       required: [true, "At least one gallery image is required"],

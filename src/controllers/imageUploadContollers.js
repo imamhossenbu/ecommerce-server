@@ -36,15 +36,13 @@ const uploadMultipleImages = async (req, res) => {
         message: "No files selected!",
       });
     }
-
-    // ২. সব ছবির ক্লাউডিনারি ইউআরএল গুলোকে একটি অ্যারেতে নেওয়া
     const imageUrls = req.files.map((file) => file.path);
 
-    // ৩. পুরো অ্যারেটা রেসপন্স হিসেবে পাঠানো
+
     res.status(200).json({
       success: true,
       message: "Images uploaded successfully!",
-      urls: imageUrls, // এখানে এখন অনেকগুলো লিংক থাকবে
+      urls: imageUrls, 
     });
   } catch (error) {
     res.status(500).json({

@@ -11,52 +11,63 @@ const createProduct = async (req, res) => {
       categoryID,
       stock,
       isFeatured,
+      isBestseller, 
+      isNew,       
+      straight_up,  
+      lowdown,
+      thumbnail, // সরাসরি URL আসছে
+      images     // সরাসরি URL এর Array আসছে
     } = req.body;
 
-    
-    if (!req.files || !req.files.thumbnail) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Please upload a main thumbnail image",
-        });
+    console.log("Request Body:", req.body);
+
+    // ১. ভ্যালিডেশন (ফাইল নয়, এখন URL চেক হবে)
+    if (!thumbnail) {
+      return res.status(400).json({
+        success: false,
+        message: "Main thumbnail image is required!",
+      });
     }
 
-    
-    const thumbnailUrl = req.files.thumbnail[0].path;
-
-
-  
-    let galleryImages = [];
-    if (req.files.images) {
-      galleryImages = req.files.images.map((file) => file.path);
+    if (!images || !Array.isArray(images) || images.length === 0) {
+       return res.status(400).json({
+         success: false,
+         message: "At least one gallery image is required!",
+       });
     }
 
-
-   
-    const product = await Product.create({
+    // ২. প্রোডাক্ট ডাটা সাজানো
+    const productData = {
       name,
       description,
-      regularPrice,
-      salePrice,
-      thumbnail: thumbnailUrl,
-      images: galleryImages,
+      regularPrice: Number(regularPrice),
+      salePrice: Number(salePrice),
+      thumbnail, // ফ্রন্টএন্ড থেকে আসা URL
+      images,    // ফ্রন্টএন্ড থেকে আসা Array of URLs
       categoryID,
-      stock: stock || 0,
-      isFeatured: isFeatured || false,
-    });
+      stock: Number(stock) || 0,
+      isFeatured: isFeatured === 'true' || isFeatured === true,
+      isBestseller: isBestseller === 'true' || isBestseller === true,
+      isNew: isNew === 'true' || isNew === true,
+      straight_up,
+      lowdown: Array.isArray(lowdown) ? lowdown : [lowdown] 
+    };
+
+    const product = await Product.create(productData);
 
     res.status(201).json({
       success: true,
-      message: "Product created with images!",
+      message: "Product created successfully!",
       data: product,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error("Creation Error:", error);
+    res.status(400).json({ 
+      success: false, 
+      message: error.message 
+    });
   }
 };
-
 
 
 //  GET /api/products/:id
@@ -208,6 +219,27 @@ const getNewArrivals = async (req, res) => {
 };
 
 
+const updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Product not found" });
+
+
+    let updateData = { ...req.body };
+    if (req.files) {
+      if (req.files.thumbnail) updateData.thumbnail = req.files.thumbnail[0].path;
+      if (req.files.images) updateData.images = req.files.images.map(file => file.path);
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+    res.status(200).json({ success: true, data: updatedProduct });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 
 
 
@@ -217,7 +249,8 @@ module.exports = {
   getAllProducts,
  deleteProduct,
   getBestsellers,
-  getNewArrivals
+  getNewArrivals,
+  updateProduct
  };
 
 

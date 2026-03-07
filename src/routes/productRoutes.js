@@ -12,12 +12,12 @@ const productUpload = upload.fields([
 ]);
 
 
-router.post("/create-product", protect, isAdmin,  productUpload, productContollers.createProduct);
-
+router.post("/create-product", protect, isAdmin, productUpload, productContollers.createProduct);
 router.get("/products",  productContollers.getAllProducts)
-router.delete("/product-delete/:id", protect, isAdmin, productContollers.deleteProduct)
+router.delete("/products/:id", protect, isAdmin, productContollers.deleteProduct);
 router.get("/products/bestsellers", productContollers.getBestsellers)
 router.get("/products/new-arrivals", productContollers.getNewArrivals);
 router.get("/products/:id", productContollers.getProductDetails)
+router.put("/products/:id", protect, isAdmin, productUpload, productContollers.updateProduct);
 
 module.exports = router;
