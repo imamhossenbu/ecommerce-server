@@ -241,22 +241,26 @@ const updateProfile = async (req, res) => {
 const forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    // এখানে userModel ব্যবহার করো (তোমার ভ্যারিয়েবল নাম অনুযায়ী)
     const user = await userModel.findOne({ email });
     
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found with this email" });
     }
 
-    // ১. টোকেন তৈরি
+    // 1. Generate Reset Token
     const resetToken = crypto.randomBytes(20).toString("hex");
 
+    // 2. Hash and set to user fields
     user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; ;
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
 
+    // 3. IMPORTANT: Save the user with token data to Database
+    await user.save(); 
+
+    // 4. Create Reset URL
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
- 
+    // 5. Setup Nodemailer
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: { 
@@ -271,7 +275,7 @@ const forgetPassword = async (req, res) => {
       html: `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #333;">Password Reset Request</h2>
-          <p>You requested to reset your password. Please click the button below:</p>
+          <p>You requested to reset your password. Please click the button below to proceed:</p>
           <a href="${resetUrl}" style="background: black; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; font-weight: bold;">Reset Password</a>
           <p style="color: #666; font-size: 12px;">This link will expire in 10 minutes.</p>
           <p style="color: #666; font-size: 12px;">If you didn't request this, please ignore this email.</p>
@@ -281,22 +285,20 @@ const forgetPassword = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ success: true, message: "পাসওয়ার্ড রিসেট লিঙ্ক ইমেইলে পাঠানো হয়েছে!" });
+    res.status(200).json({ success: true, message: "Password reset link sent to your email!" });
   } catch (error) {
-    console.error("Forget Password Error:", error); // কনসোলে এরর চেক করার জন্য
-    res.status(500).json({ success: false, message: "ইমেইল পাঠাতে সমস্যা হয়েছে, আবার চেষ্টা করুন।" });
+    console.error("Forget Password Error:", error); 
+    res.status(500).json({ success: false, message: "Failed to send email. Please try again later." });
   }
 };
 
 const resetPassword = async (req, res) => {
   try {
-    // ১. ইউজার থেকে আসা টোকেনটিকে হ্যাশ করা (কারণ ডাটাবেসে হ্যাশ করা টোকেন আছে)
     const resetPasswordToken = crypto
       .createHash("sha256")
       .update(req.params.token)
       .digest("hex");
 
-    // ২. টোকেন ম্যাচ করে এবং মেয়াদ আছে এমন ইউজারকে খোঁজা
     const user = await userModel.findOne({
       resetPasswordToken,
       resetPasswordExpires: { $gt: Date.now() },
@@ -305,13 +307,12 @@ const resetPassword = async (req, res) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired reset token",
+        message: "Invalid or expired reset token. Please request a new one.",
       });
     }
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(req.body.password, salt);
-
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 
@@ -319,13 +320,12 @@ const resetPassword = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Password reset successful! You can now login.",
+      message: "Password reset successful! You can now login with your new password.",
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: "Internal Server Error. Please try again." });
   }
 };
-
 
 
 module.exports = {
