@@ -14,7 +14,7 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ["http://127.0.0.1:5500", "http://127.0.0.1:5501","http://127.0.0.1:5500","https://ecommerce-frontend-amber-eight.vercel.app",'http://localhost:5173'],
+    origin: ["http://127.0.0.1:5500", "http://127.0.0.1:5501","http://127.0.0.1:5500","https://ecommerce-frontend-amber-eight.vercel.app",'http://localhost:5173','https://ecommerce-with-react-3ljc.vercel.app'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
   }),

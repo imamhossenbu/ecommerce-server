@@ -79,20 +79,20 @@ exports.paymentSuccess = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndUpdate({ transactionId: tranId }, { paymentStatus: 'Paid' });
     // Frontend-er success page-e redirect
-    res.redirect('http://localhost:5173/success'); 
+    res.redirect('https://ecommerce-with-react-3ljc.vercel.app/success'); 
 };
 
 // Payment Fail/Cancel Handler
 exports.paymentFail = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndDelete({ transactionId: tranId }); 
-    res.redirect('http://localhost:5173/cancel');
+    res.redirect('https://ecommerce-with-react-3ljc.vercel.app/cancel');
 };
 
 exports.paymentCancel = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndUpdate({ transactionId: tranId }, { paymentStatus: 'Cancelled' });
-    res.redirect('http://localhost:5173/cancel');
+    res.redirect('https://ecommerce-with-react-3ljc.vercel.app/cancel');
 };
 
 
