@@ -15,10 +15,10 @@ exports.createCheckoutSession = async (req, res) => {
     total_amount: parseFloat(totalAmount),
     currency: 'BDT',
     tran_id: transactionId,
-    success_url: `http://localhost:5001/api/payment/success/${transactionId}`,
-    fail_url: `http://localhost:5001/api/payment/fail/${transactionId}`,
-    cancel_url: `http://localhost:5001/api/payment/cancel/${transactionId}`,
-    ipn_url: `http://localhost:5001/api/payment/ipn`,
+    success_url: `https://ecommerce-with-react-3ljc.vercel.app/api/payment/success/${transactionId}`,
+    fail_url: `https://ecommerce-with-react-3ljc.vercel.app/api/payment/fail/${transactionId}`,
+    cancel_url: `https://ecommerce-with-react-3ljc.vercel.app/api/payment/cancel/${transactionId}`,
+    ipn_url: `https://ecommerce-with-react-3ljc.vercel.app/api/payment/ipn`,
     shipping_method: 'Courier',
     product_name: 'Skincare Products',
     product_category: 'Skincare',
@@ -34,7 +34,7 @@ exports.createCheckoutSession = async (req, res) => {
     cus_phone: customerInfo.phone,
 
     // --- Shipping Information (EIGULO MISSING CHILO) ---
-    ship_name: `${customerInfo.firstName} ${customerInfo.lastName}`, // Name pathatei hobe
+    ship_name: `${customerInfo.firstName} ${customerInfo.lastName}`, 
     ship_add1: customerInfo.address || 'Dhaka',
     ship_city: customerInfo.city || 'Dhaka',
     ship_state: customerInfo.state || 'Dhaka',
