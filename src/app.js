@@ -12,13 +12,25 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 
 // Middleware
-app.use(
-  cors({
-    origin: ["http://127.0.0.1:5500", "http://127.0.0.1:5501","http://127.0.0.1:5500","https://ecommerce-frontend-amber-eight.vercel.app",'http://localhost:5173','https://ecommerce-with-react-3ljc.vercel.app','http://localhost:3000','https://ecommerce-with-next-drab.vercel.app'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
-  }),
-);
+const whitelist = [
+  'https://ecommerce-with-react-3ljc.vercel.app',
+  'https://ecommerce-frontend-amber-eight.vercel.app',
+  'https://ecommerce-with-next-drab.vercel.app',
+  'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || whitelist.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
