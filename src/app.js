@@ -12,22 +12,23 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 
 // Middleware
-const whitelist = [
+const allowedOrigins = [
+  'http://localhost:3000',
   'https://ecommerce-with-react-3ljc.vercel.app',
-  'https://ecommerce-frontend-amber-eight.vercel.app',
   'https://ecommerce-with-next-drab.vercel.app',
-  'http://localhost:3000'
+  'https://ecommerce-frontend-amber-eight.vercel.app'
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || whitelist.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.includes('sslcommerz.com')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
 
 
