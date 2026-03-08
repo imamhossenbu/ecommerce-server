@@ -244,24 +244,22 @@ const forgetPassword = async (req, res) => {
     const user = await userModel.findOne({ email });
     
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found with this email" });
+      return res.status(404).json({ success: false, message: "No user found in this mail" });
     }
 
-    // 1. Generate Reset Token
+  
     const resetToken = crypto.randomBytes(20).toString("hex");
 
-    // 2. Hash and set to user fields
+   
     user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+    user.resetPasswordExpires = Date.now() + 30 * 60 * 1000; 
 
-    // 3. IMPORTANT: Save the user with token data to Database
     await user.save(); 
 
-    // 4. Create Reset URL
-   const frontendBase = process.env.FRONTEND_URL || "http://localhost:3000";
-const resetUrl = `${frontendBase}/reset-password/${resetToken}`;
 
-    // 5. Setup Nodemailer
+    const frontendBase = process.env.FRONTEND_URL || "http://localhost:3000";
+    const resetUrl = `${frontendBase}/reset-password/${resetToken}`;
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: { 
@@ -275,56 +273,59 @@ const resetUrl = `${frontendBase}/reset-password/${resetToken}`;
       subject: "Password Reset Request - Seoul Mirage",
       html: `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-          <h2 style="color: #333;">Password Reset Request</h2>
-          <p>You requested to reset your password. Please click the button below to proceed:</p>
-          <a href="${resetUrl}" style="background: black; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; font-weight: bold;">Reset Password</a>
-          <p style="color: #666; font-size: 12px;">This link will expire in 10 minutes.</p>
-          <p style="color: #666; font-size: 12px;">If you didn't request this, please ignore this email.</p>
+          <h2>Password Reset</h2>
+          <p>নিচের বাটনে ক্লিক করে আপনার পাসওয়ার্ড রিসেট করুন:</p>
+          <a href="${resetUrl}" style="background: black; color: white; padding: 12px 25px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0;">Reset Password</a>
+          <p>এই লিঙ্কটি ৩০ মিনিট কাজ করবে।</p>
         </div>
       `
     };
 
     await transporter.sendMail(mailOptions);
+    res.status(200).json({ success: true, message: "Reset link send to your email" });
 
-    res.status(200).json({ success: true, message: "Password reset link sent to your email!" });
   } catch (error) {
     console.error("Forget Password Error:", error); 
-    res.status(500).json({ success: false, message: "Failed to send email. Please try again later." });
+    res.status(500).json({ success: false, message: "Error in send mail" });
   }
 };
 
+// --- ২. নতুন পাসওয়ার্ড সেভ করা ---
 const resetPassword = async (req, res) => {
   try {
-    const resetPasswordToken = crypto
+
+    const hashedToken = crypto
       .createHash("sha256")
       .update(req.params.token)
       .digest("hex");
 
     const user = await userModel.findOne({
-      resetPasswordToken,
-      resetPasswordExpires: { $gt: Date.now() },
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() }, 
     });
 
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: "Invalid or expired reset token. Please request a new one.",
+        message: "Link expired. Please try again",
       });
     }
 
+    // নতুন পাসওয়ার্ড হাশ করে সেভ করা
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(req.body.password, salt);
+    
+   
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 
     await user.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Password reset successful! You can now login with your new password.",
-    });
+    res.status(200).json({ success: true, message: "Password change successfully" });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: "Internal Server Error. Please try again." });
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ success: false, message: "Error in server" });
   }
 };
 
