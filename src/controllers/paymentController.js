@@ -6,7 +6,6 @@ const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASSWORD;
 const is_live = false; 
 
-const API_URL='https://ecommerce-with-react-3ljc.vercel.app'|| 'https://ecommerce-frontend-amber-eight.vercel.app' || 'https://ecommerce-with-next-drab.vercel.app'
 
 exports.createCheckoutSession = async (req, res) => {
     try {
@@ -81,20 +80,20 @@ exports.paymentSuccess = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndUpdate({ transactionId: tranId }, { paymentStatus: 'Paid' });
     // Frontend-er success page-e redirect
-    res.redirect(`${API_URL}/success`); 
+    res.redirect(`https://ecommerce-with-next-drab.vercel.app/success`); 
 };
 
 // Payment Fail/Cancel Handler
 exports.paymentFail = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndDelete({ transactionId: tranId }); 
-    res.redirect(`${API_URL}/cancel`);
+    res.redirect(`https://ecommerce-with-next-drab.vercel.app/cancel`);
 };
 
 exports.paymentCancel = async (req, res) => {
     const { tranId } = req.params;
     await Order.findOneAndUpdate({ transactionId: tranId }, { paymentStatus: 'Cancelled' });
-    res.redirect(`${API_URL}/cancel`);
+    res.redirect(`https://ecommerce-with-next-drab.vercel.app/cancel`);
 };
 
 
@@ -231,5 +230,4 @@ exports.updateOrderStatus = async (req, res) => {
         res.status(500).json({ success: false, message: "Server Error", error: error.message });
     }
 };
-
 

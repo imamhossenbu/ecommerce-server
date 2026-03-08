@@ -13,8 +13,8 @@ router.post('/create-checkout-session', paymentController.createCheckoutSession)
 router.post('/success/:tranId', paymentController.paymentSuccess);
 router.post('/fail/:tranId', paymentController.paymentFail);
 router.post('/cancel/:tranId', paymentController.paymentCancel);
-router.get('/my-orders', authMiddleware.protect, paymentController.getMyOrders);
-router.get("/order/:orderId", authMiddleware.protect, paymentController.getOrderById);
+router.get('/my-orders', protect, paymentController.getMyOrders);
+router.get("/order/:orderId", protect, paymentController.getOrderById);
 
 router.get('/all-orders', protect,isAdmin, paymentController.getAllOrders);
 router.patch('/update-order-status/:id', protect,isAdmin, paymentController.updateOrderStatus);
